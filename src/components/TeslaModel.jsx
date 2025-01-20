@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useGLTF } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 // 定义各个组的部件配置
@@ -63,6 +64,27 @@ const PART_GROUPS = {
   }
 };
 
+// 动画速度和门的配置
+const ANIMATION_SPEED = 0.08;
+const DOOR_CONFIGS = {
+  leftFront: { 
+    open: { rotationY: -Math.PI / 4, positionX: 0.8, positionZ: -0.5 },
+    closed: { rotationY: 0, positionX: 0, positionZ: 0 }
+  },
+  leftRear: { 
+    open: { rotationY: -Math.PI / 4, positionX: -0.05, positionZ: -0.85 },
+    closed: { rotationY: 0, positionX: 0, positionZ: 0 }
+  },
+  rightFront: { 
+    open: { rotationY: Math.PI / 4, positionX: -0.8, positionZ: -0.5 },
+    closed: { rotationY: 0, positionX: 0, positionZ: 0 }
+  },
+  rightRear: { 
+    open: { rotationY: Math.PI / 4, positionX: 0.05, positionZ: -0.85 },
+    closed: { rotationY: 0, positionX: 0, positionZ: 0 }
+  }
+};
+
 export default function TeslaModel({ color, onPartClick }) {
   const { scene } = useGLTF('/Tesla Model Y 2022.glb');
   const groupRefs = {
@@ -71,6 +93,48 @@ export default function TeslaModel({ color, onPartClick }) {
     rightFront: useRef(new THREE.Group()),
     rightRear: useRef(new THREE.Group())
   };
+
+  const [doorStates, setDoorStates] = useState({
+    leftFront: { isAnimating: false, isOpen: false },
+    leftRear: { isAnimating: false, isOpen: false },
+    rightFront: { isAnimating: false, isOpen: false },
+    rightRear: { isAnimating: false, isOpen: false }
+  });
+
+  // 动画更新函数
+  useFrame(() => {
+    Object.entries(groupRefs).forEach(([groupName, ref]) => {
+      const state = doorStates[groupName];
+      if (state.isAnimating) {
+        const group = ref.current;
+        const targetConfig = DOOR_CONFIGS[groupName][state.isOpen ? 'open' : 'closed'];
+        
+        // 更新旋转
+        group.rotation.y += (targetConfig.rotationY - group.rotation.y) * ANIMATION_SPEED;
+        
+        // 更新位置
+        group.position.x += (targetConfig.positionX - group.position.x) * ANIMATION_SPEED;
+        group.position.z += (targetConfig.positionZ - group.position.z) * ANIMATION_SPEED;
+        
+        // 检查动画是否完成
+        if (
+          Math.abs(group.rotation.y - targetConfig.rotationY) < 0.01 &&
+          Math.abs(group.position.x - targetConfig.positionX) < 0.01 &&
+          Math.abs(group.position.z - targetConfig.positionZ) < 0.01
+        ) {
+          // 设置精确的最终位置
+          group.rotation.y = targetConfig.rotationY;
+          group.position.x = targetConfig.positionX;
+          group.position.z = targetConfig.positionZ;
+          
+          setDoorStates(prev => ({
+            ...prev,
+            [groupName]: { ...prev[groupName], isAnimating: false }
+          }));
+        }
+      }
+    });
+  });
 
   // 添加调试功能
   useEffect(() => {
@@ -113,10 +177,6 @@ export default function TeslaModel({ color, onPartClick }) {
       const windowMesh = scene.getObjectByName(parts.window);
 
       if (doorMesh) {
-        // 打印每个门的初始位置和旋转
-        console.log(`${groupName} initial position:`, doorMesh.position);
-        console.log(`${groupName} initial rotation:`, doorMesh.rotation);
-
         // 将部件添加到组中，保持其原始位置和旋转
         doorMesh.updateMatrix();
         const doorClone = doorMesh.clone();
@@ -158,67 +218,21 @@ export default function TeslaModel({ color, onPartClick }) {
     });
   }, [scene]);
 
-  // 修改点击事件，添加位置和旋转的打印
+  // 处理点击事件
   const handleClick = (event) => {
     event.stopPropagation();
     const clickedMesh = event.object;
     const groupName = clickedMesh.parent?.name;
 
     if (groupName && groupRefs[groupName]) {
-      const group = groupRefs[groupName].current;
-      const currentRotation = group.rotation;
-      const isOpen = Math.abs(currentRotation.y) > 0.1;
-      
-      // 打印当前状态
-      console.log(`${groupName} before click:`, {
-        position: group.position,
-        rotation: group.rotation,
-        isOpen: isOpen
-      });
-
-      // 设置新的旋转和平移
-      if (isOpen) {
-        // 关闭状态：恢复初始位置和旋转
-        group.rotation.y = 0;
-        group.position.x = 0;
-        group.position.z = 0;
-      } else {
-        // 打开状态：旋转并平移
-        const rotationMap = {
-          leftFront: { 
-            rotationY: -Math.PI / 4, 
-            positionX: 0.8, 
-            positionZ: -0.5 
-          },
-          leftRear: { 
-            rotationY: -Math.PI / 4, 
-            positionX: -0.05, 
-            positionZ: -0.85 
-          },
-          rightFront: { 
-            rotationY: Math.PI / 4, 
-            positionX: -0.8, 
-            positionZ: -0.5 
-          },
-          rightRear: { 
-            rotationY: Math.PI / 4, 
-            positionX: 0.05, 
-            positionZ: -0.85 
-          }
-        };
-
-        const doorConfig = rotationMap[groupName];
-        group.rotation.y = doorConfig.rotationY;
-        group.position.x = doorConfig.positionX;
-        group.position.z = doorConfig.positionZ;
-      }
-
-      // 打印更新后的状态
-      console.log(`${groupName} after click:`, {
-        position: group.position,
-        rotation: group.rotation,
-        newRotation: group.rotation.y
-      });
+      // 切换门的状态并开始动画
+      setDoorStates(prev => ({
+        ...prev,
+        [groupName]: {
+          isAnimating: true,
+          isOpen: !prev[groupName].isOpen
+        }
+      }));
     } else {
       onPartClick?.({
         name: clickedMesh.name,
