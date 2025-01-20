@@ -1,7 +1,7 @@
 import React, { Suspense, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
-import { TeslaModel } from './TeslaModel';
+import TeslaModel from './TeslaModel';
 
 export function BasicCar() {
   const [carColor, setCarColor] = useState('#ffffff');
@@ -52,10 +52,7 @@ export function BasicCar() {
         background: 'rgba(0, 0, 0, 0.7)',
         padding: '15px',
         borderRadius: '8px',
-        color: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '15px'
+        color: 'white'
       }}>
         <label>
           车身颜色：
