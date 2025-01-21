@@ -61,6 +61,24 @@ const PART_GROUPS = {
       'Model_Y_1000',
       'Model_Y_1003'
     ]
+  },
+  trunk: {
+    door: 'Model_Y_1008',    // 后备箱主体
+    extras: [                // 后备箱相关组件
+      'Model_Y_1027',
+      'Model_Y_1021',
+      'Model_Y_1023',
+      'Model_Y_1020',
+      'Model_Y_1011',
+      'Model_Y_1015',
+      'Model_Y_1019',
+      'Model_Y_1017',
+      'Model_Y_1018',
+      'Model_Y_851',
+      'Model_Y_1016',
+      'Model_Y_1024',
+      'Model_Y_1022'
+    ]
   }
 };
 
@@ -82,23 +100,28 @@ const DOOR_CONFIGS = {
   rightRear: { 
     open: { rotationY: Math.PI / 4, positionX: 0.05, positionZ: -0.85 },
     closed: { rotationY: 0, positionX: 0, positionZ: 0 }
+  },
+  trunk: { 
+    open: { rotationX: Math.PI / 4, positionY: -0.7, positionZ: -1.5 },
+    closed: { rotationX: 0, positionY: 0, positionZ: 0 }
   }
 };
-
 export default function TeslaModel({ color, onPartClick }) {
   const { scene } = useGLTF('/Tesla Model Y 2022.glb');
   const groupRefs = {
     leftFront: useRef(new THREE.Group()),
     leftRear: useRef(new THREE.Group()),
     rightFront: useRef(new THREE.Group()),
-    rightRear: useRef(new THREE.Group())
+    rightRear: useRef(new THREE.Group()),
+    trunk: useRef(new THREE.Group())
   };
 
   const [doorStates, setDoorStates] = useState({
     leftFront: { isAnimating: false, isOpen: false },
     leftRear: { isAnimating: false, isOpen: false },
     rightFront: { isAnimating: false, isOpen: false },
-    rightRear: { isAnimating: false, isOpen: false }
+    rightRear: { isAnimating: false, isOpen: false },
+    trunk: { isAnimating: false, isOpen: false }
   });
 
   // 动画更新函数
@@ -109,23 +132,46 @@ export default function TeslaModel({ color, onPartClick }) {
         const group = ref.current;
         const targetConfig = DOOR_CONFIGS[groupName][state.isOpen ? 'open' : 'closed'];
         
-        // 更新旋转
-        group.rotation.y += (targetConfig.rotationY - group.rotation.y) * ANIMATION_SPEED;
+        // 更新旋转（支持 X 轴和 Y 轴）
+        if (targetConfig.rotationX !== undefined) {
+          group.rotation.x += (targetConfig.rotationX - group.rotation.x) * ANIMATION_SPEED;
+        }
+        if (targetConfig.rotationY !== undefined) {
+          group.rotation.y += (targetConfig.rotationY - group.rotation.y) * ANIMATION_SPEED;
+        }
         
         // 更新位置
-        group.position.x += (targetConfig.positionX - group.position.x) * ANIMATION_SPEED;
-        group.position.z += (targetConfig.positionZ - group.position.z) * ANIMATION_SPEED;
+        if (targetConfig.positionX !== undefined) {
+          group.position.x += (targetConfig.positionX - group.position.x) * ANIMATION_SPEED;
+        }
+        if (targetConfig.positionY !== undefined) {
+          group.position.y += (targetConfig.positionY - group.position.y) * ANIMATION_SPEED;
+        }
+        if (targetConfig.positionZ !== undefined) {
+          group.position.z += (targetConfig.positionZ - group.position.z) * ANIMATION_SPEED;
+        }
         
         // 检查动画是否完成
-        if (
-          Math.abs(group.rotation.y - targetConfig.rotationY) < 0.01 &&
-          Math.abs(group.position.x - targetConfig.positionX) < 0.01 &&
-          Math.abs(group.position.z - targetConfig.positionZ) < 0.01
-        ) {
+        const isComplete = Object.entries(targetConfig).every(([key, value]) => {
+          if (key.startsWith('rotation')) {
+            return Math.abs(group.rotation[key.slice(-1).toLowerCase()] - value) < 0.01;
+          }
+          if (key.startsWith('position')) {
+            return Math.abs(group.position[key.slice(-1).toLowerCase()] - value) < 0.01;
+          }
+          return true;
+        });
+
+        if (isComplete) {
           // 设置精确的最终位置
-          group.rotation.y = targetConfig.rotationY;
-          group.position.x = targetConfig.positionX;
-          group.position.z = targetConfig.positionZ;
+          Object.entries(targetConfig).forEach(([key, value]) => {
+            if (key.startsWith('rotation')) {
+              group.rotation[key.slice(-1).toLowerCase()] = value;
+            }
+            if (key.startsWith('position')) {
+              group.position[key.slice(-1).toLowerCase()] = value;
+            }
+          });
           
           setDoorStates(prev => ({
             ...prev,
@@ -138,11 +184,9 @@ export default function TeslaModel({ color, onPartClick }) {
 
   // 添加调试功能
   useEffect(() => {
-    // 添加全局坐标轴辅助器
     const globalAxesHelper = new THREE.AxesHelper(5);
     scene.add(globalAxesHelper);
 
-    // 为每个车门组添加局部坐标轴辅助器
     Object.entries(groupRefs).forEach(([groupName, ref]) => {
       const localAxesHelper = new THREE.AxesHelper(1);
       ref.current.add(localAxesHelper);
@@ -160,7 +204,6 @@ export default function TeslaModel({ color, onPartClick }) {
 
   // 设置组和部件
   useEffect(() => {
-    // 清理旧的组
     Object.values(groupRefs).forEach(ref => {
       if (ref.current.parent) {
         ref.current.parent.remove(ref.current);
@@ -171,13 +214,11 @@ export default function TeslaModel({ color, onPartClick }) {
       const group = groupRefs[groupName].current;
       group.name = groupName;
 
-      // 找到对应的部件
       const doorMesh = scene.getObjectByName(parts.door);
       const handleMesh = scene.getObjectByName(parts.handle);
       const windowMesh = scene.getObjectByName(parts.window);
 
       if (doorMesh) {
-        // 将部件添加到组中，保持其原始位置和旋转
         doorMesh.updateMatrix();
         const doorClone = doorMesh.clone();
         group.add(doorClone);
@@ -207,10 +248,8 @@ export default function TeslaModel({ color, onPartClick }) {
           });
         }
 
-        // 添加组到场景
         scene.add(group);
 
-        // 移除原始部件
         if (doorMesh.parent) doorMesh.parent.remove(doorMesh);
         if (handleMesh?.parent) handleMesh.parent.remove(handleMesh);
         if (windowMesh?.parent) windowMesh.parent.remove(windowMesh);
@@ -225,7 +264,6 @@ export default function TeslaModel({ color, onPartClick }) {
     const groupName = clickedMesh.parent?.name;
 
     if (groupName && groupRefs[groupName]) {
-      // 切换门的状态并开始动画
       setDoorStates(prev => ({
         ...prev,
         [groupName]: {
