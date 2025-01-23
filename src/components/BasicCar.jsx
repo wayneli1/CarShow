@@ -106,7 +106,7 @@ export function BasicCar() {
        }}
        onClick={() => setWheelsSpinning(!wheelsSpinning)}
      >
-       {wheelsSpinning ? '停止轮子' : '转动轮子'}
+       {wheelsSpinning ? '停止后轮驱动' : '开始后轮驱动'}
      </button>
 
      {/* 驾驶室视角切换按钮 */}
