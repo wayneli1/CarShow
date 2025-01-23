@@ -4,24 +4,15 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { WheelControls } from './WheelControls';
 
-
-// 定义各个组的部件配置
 const PART_GROUPS = {
   leftFront: {
-    door: 'Model_Y_1047',    // 左前门
-    handle: 'Model_Y_1063',  // 左前门把手{ color, onPartClick, wheelsSpinning = false }
-    window: 'Model_Y_1061',  // 左前窗户
-    extras: [                // 使用数组存储所有额外组件
-      'Model_Y_1062',
-      'Model_Y_1054',
-      'Model_Y_1049',
-      'Model_Y_1059',
-      'Model_Y_1056',
-      'Model_Y_1053',
-      'Model_Y_1058',
-      'Model_Y_1057',
-      'Model_Y_1050',
-      'Model_Y_1055'
+    door: 'Model_Y_1047',
+    handle: 'Model_Y_1063',
+    window: 'Model_Y_1061',
+    extras: [
+      'Model_Y_1062', 'Model_Y_1054', 'Model_Y_1049', 'Model_Y_1059',
+      'Model_Y_1056', 'Model_Y_1053', 'Model_Y_1058', 'Model_Y_1057',
+      'Model_Y_1050', 'Model_Y_1055'
     ]
   },
   leftRear: {
@@ -29,11 +20,8 @@ const PART_GROUPS = {
     handle: 'Model_Y_1040',
     window: 'Model_Y_1041',
     extras: [
-      'Model_Y_1043',
-      'Model_Y_1038',
-      'Model_Y_1037',
-      'Model_Y_1036',
-      'Model_Y_1042'
+      'Model_Y_1043', 'Model_Y_1038', 'Model_Y_1037',
+      'Model_Y_1036', 'Model_Y_1042'
     ]
   },
   rightFront: {
@@ -41,16 +29,9 @@ const PART_GROUPS = {
     handle: 'Model_Y_995',
     window: 'Model_Y_989',
     extras: [
-      'Model_Y_992',
-      'Model_Y_984',
-      'Model_Y_991',
-      'Model_Y_985',
-      'Model_Y_983',
-      'Model_Y_990',
-      'Model_Y_987',
-      'Model_Y_988',
-      'Model_Y_986',
-      'Model_Y_982'
+      'Model_Y_992', 'Model_Y_984', 'Model_Y_991', 'Model_Y_985',
+      'Model_Y_983', 'Model_Y_990', 'Model_Y_987', 'Model_Y_988',
+      'Model_Y_986', 'Model_Y_982'
     ]
   },
   rightRear: {
@@ -58,32 +39,20 @@ const PART_GROUPS = {
     handle: 'Model_Y_999',
     window: 'Model_Y_1004',
     extras: [
-      'Model_Y_1006',
-      'Model_Y_1002',
-      'Model_Y_1000',
-      'Model_Y_1003'
+      'Model_Y_1006', 'Model_Y_1002', 'Model_Y_1000', 'Model_Y_1003'
     ]
   },
   trunk: {
-    door: 'Model_Y_1008',    // 后备箱主体
-    extras: [                // 后备箱相关组件
-      'Model_Y_1027',
-      'Model_Y_1021',
-      'Model_Y_1023',
-      'Model_Y_1020',
-      'Model_Y_1011',
-      'Model_Y_1015',
-      'Model_Y_1019',
-      'Model_Y_1017',
-      'Model_Y_1018',
-      'Model_Y_851',
-      'Model_Y_1016',
-      'Model_Y_1024',
+    door: 'Model_Y_1008',
+    extras: [
+      'Model_Y_1027', 'Model_Y_1021', 'Model_Y_1023', 'Model_Y_1020',
+      'Model_Y_1011', 'Model_Y_1015', 'Model_Y_1019', 'Model_Y_1017',
+      'Model_Y_1018', 'Model_Y_851', 'Model_Y_1016', 'Model_Y_1024',
       'Model_Y_1022'
     ]
   }
 };
-// 动画速度和门的配置
+
 const ANIMATION_SPEED = 0.08;
 const DOOR_CONFIGS = {
   leftFront: { 
@@ -107,7 +76,8 @@ const DOOR_CONFIGS = {
     closed: { rotationX: 0, positionY: 0, positionZ: 0 }
   }
 };
-export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }) {
+
+export default function TeslaModel({ color, wheelsSpinning = false }) {
   const { scene } = useGLTF('/Tesla Model Y 2022.glb');
   const groupRefs = {
     leftFront: useRef(new THREE.Group()),
@@ -125,7 +95,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
     trunk: { isAnimating: false, isOpen: false }
   });
 
-  // 动画更新函数
   useFrame(() => {
     Object.entries(groupRefs).forEach(([groupName, ref]) => {
       const state = doorStates[groupName];
@@ -133,7 +102,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
         const group = ref.current;
         const targetConfig = DOOR_CONFIGS[groupName][state.isOpen ? 'open' : 'closed'];
         
-        // 更新旋转（支持 X 轴和 Y 轴）
         if (targetConfig.rotationX !== undefined) {
           group.rotation.x += (targetConfig.rotationX - group.rotation.x) * ANIMATION_SPEED;
         }
@@ -141,7 +109,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
           group.rotation.y += (targetConfig.rotationY - group.rotation.y) * ANIMATION_SPEED;
         }
         
-        // 更新位置
         if (targetConfig.positionX !== undefined) {
           group.position.x += (targetConfig.positionX - group.position.x) * ANIMATION_SPEED;
         }
@@ -152,7 +119,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
           group.position.z += (targetConfig.positionZ - group.position.z) * ANIMATION_SPEED;
         }
         
-        // 检查动画是否完成
         const isComplete = Object.entries(targetConfig).every(([key, value]) => {
           if (key.startsWith('rotation')) {
             return Math.abs(group.rotation[key.slice(-1).toLowerCase()] - value) < 0.01;
@@ -164,7 +130,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
         });
 
         if (isComplete) {
-          // 设置精确的最终位置
           Object.entries(targetConfig).forEach(([key, value]) => {
             if (key.startsWith('rotation')) {
               group.rotation[key.slice(-1).toLowerCase()] = value;
@@ -183,18 +148,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
     });
   });
 
-  // 添加调试功能
-  useEffect(() => {
-    const globalAxesHelper = new THREE.AxesHelper(5);
-    scene.add(globalAxesHelper);
-
-    Object.entries(groupRefs).forEach(([groupName, ref]) => {
-      const localAxesHelper = new THREE.AxesHelper(1);
-      ref.current.add(localAxesHelper);
-    });
-  }, [scene]);
-
-  // 更新车身颜色
   useEffect(() => {
     scene.traverse((node) => {
       if (node.isMesh && node.material.name === 'carpaint') {
@@ -203,7 +156,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
     });
   }, [color, scene]);
 
-  // 设置组和部件
   useEffect(() => {
     Object.values(groupRefs).forEach(ref => {
       if (ref.current.parent) {
@@ -236,7 +188,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
           group.add(windowClone);
         }
 
-        // 处理额外组件
         if (parts.extras && Array.isArray(parts.extras)) {
           parts.extras.forEach(extraId => {
             const extraMesh = scene.getObjectByName(extraId);
@@ -258,7 +209,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
     });
   }, [scene]);
 
-  // 处理点击事件
   const handleClick = (event) => {
     event.stopPropagation();
     const clickedMesh = event.object;
@@ -272,12 +222,6 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
           isOpen: !prev[groupName].isOpen
         }
       }));
-    } else {
-      onPartClick?.({
-        name: clickedMesh.name,
-        materialName: clickedMesh.material.name,
-        position: clickedMesh.position
-      });
     }
   };
 
@@ -285,10 +229,8 @@ export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }
     <group onClick={handleClick}>
       <primitive object={scene} />
       <WheelControls scene={scene} isSpinning={wheelsSpinning} />
-
     </group>
   );
 }
 
-// 预加载模型
 useGLTF.preload('/Tesla Model Y 2022.glb');
