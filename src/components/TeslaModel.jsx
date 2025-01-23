@@ -2,12 +2,14 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { WheelControls } from './WheelControls';
+
 
 // 定义各个组的部件配置
 const PART_GROUPS = {
   leftFront: {
     door: 'Model_Y_1047',    // 左前门
-    handle: 'Model_Y_1063',  // 左前门把手
+    handle: 'Model_Y_1063',  // 左前门把手{ color, onPartClick, wheelsSpinning = false }
     window: 'Model_Y_1061',  // 左前窗户
     extras: [                // 使用数组存储所有额外组件
       'Model_Y_1062',
@@ -81,7 +83,6 @@ const PART_GROUPS = {
     ]
   }
 };
-
 // 动画速度和门的配置
 const ANIMATION_SPEED = 0.08;
 const DOOR_CONFIGS = {
@@ -106,7 +107,7 @@ const DOOR_CONFIGS = {
     closed: { rotationX: 0, positionY: 0, positionZ: 0 }
   }
 };
-export default function TeslaModel({ color, onPartClick }) {
+export default function TeslaModel({ color, onPartClick,wheelsSpinning = false }) {
   const { scene } = useGLTF('/Tesla Model Y 2022.glb');
   const groupRefs = {
     leftFront: useRef(new THREE.Group()),
@@ -283,6 +284,8 @@ export default function TeslaModel({ color, onPartClick }) {
   return (
     <group onClick={handleClick}>
       <primitive object={scene} />
+      <WheelControls scene={scene} isSpinning={wheelsSpinning} />
+
     </group>
   );
 }
