@@ -41,7 +41,8 @@ export function BasicCar() {
            wheelsSpinning={wheelsSpinning}
          />
          
-         <Environment preset="city" />
+         <Environment files="solitude_night_4k.hdr" background />
+
          
          <OrbitControls
            enabled={!isInCockpit}
