@@ -1,9 +1,53 @@
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls, Environment, useProgress } from '@react-three/drei';
 import { Sun, Moon } from 'lucide-react';
 import TeslaModel from './TeslaModel';
 import { CameraControls } from './CameraControls';
+
+function Loader() {
+ const { progress } = useProgress();
+ return null;
+}
+
+function LoadingScreen() {
+ const { progress, active } = useProgress();
+ 
+ if (!active) return null;
+ 
+ return (
+   <div style={{
+     position: 'absolute',
+     top: '50%',
+     left: '50%',
+     transform: 'translate(-50%, -50%)',
+     textAlign: 'center',
+     zIndex: 100
+   }}>
+     <div style={{
+       width: '200px',
+       height: '6px',
+       background: '#444',
+       borderRadius: '3px',
+       overflow: 'hidden'
+     }}>
+       <div style={{
+         width: `${progress}%`,
+         height: '100%',
+         background: '#fff',
+         transition: 'width 0.3s ease'
+       }} />
+     </div>
+     <div style={{ 
+       color: '#000', 
+       marginTop: '10px',
+       fontSize: '14px' 
+     }}>
+       加载中... {progress.toFixed(0)}%
+     </div>
+   </div>
+ );
+}
 
 export function BasicCar() {
  const [carColor, setCarColor] = useState('#ffffff');
@@ -22,11 +66,12 @@ export function BasicCar() {
      bottom: 0,
      background: '#f0f0f0'
    }}>
-     <Canvas 
+     <LoadingScreen />
+     <Canvas
        camera={{ position: [8, 3, 8], fov: 50 }}
        shadows
      >
-       <Suspense fallback={null}>
+       <Suspense fallback={<Loader />}>
          <ambientLight intensity={0.7} />
          <spotLight
            position={[10, 10, 10]}
@@ -75,27 +120,27 @@ export function BasicCar() {
        </label>
      </div>
 
-     <button
-  style={{
-    position: 'absolute',
-    right: '20px',
-    top: '20px',
-    width: '44px', // 调整尺寸
-    height: '44px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'rgba(0, 0, 0, 0.7)',
-    color: '#fff', // 确保图标颜色正确
-    border: 'none',
-    borderRadius: '50%',
-    cursor: 'pointer',
-    padding: '8px' // 添加内边距
-  }}
-  onClick={() => setIsDaylight(!isDaylight)}
->
-  {isDaylight ? <Moon size={20} /> : <Sun size={20} />}
-</button>
+     <button 
+       style={{
+         position: 'absolute',
+         right: '20px',
+         top: '20px',
+         width: '44px',
+         height: '44px',
+         display: 'flex',
+         alignItems: 'center',
+         justifyContent: 'center',
+         background: 'rgba(0, 0, 0, 0.7)',
+         color: '#fff',
+         border: 'none',
+         borderRadius: '50%',
+         cursor: 'pointer',
+         padding: '8px'
+       }}
+       onClick={() => setIsDaylight(!isDaylight)}
+     >
+       {isDaylight ? <Moon size={20} /> : <Sun size={20} />}
+     </button>
 
      <button
        style={{
